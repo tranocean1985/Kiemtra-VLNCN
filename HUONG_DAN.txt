@@ -1,0 +1,45 @@
+HƯỚNG DẪN SỬ DỤNG PHẦN MỀM THI VLNCN (CHẠY OFFLINE)
+=====================================================
+
+Bộ này gồm 3 file, để CHUNG MỘT THƯ MỤC (ví dụ ổ D hoặc USB):
+  1. PhanMemThi_VLNCN.html   -> nội dung phần mềm thi
+  2. ThiThat_ToanManHinh.bat -> chạy THI THẬT (khóa toàn màn hình)
+  3. ChayThu_CuaSo.bat       -> chạy THỬ (cửa sổ nhỏ, xem trước)
+
+QUAN TRỌNG: KHÔNG cần internet. Phần mềm chạy hoàn toàn offline.
+
+
+A. CÁCH CHẠY
+------------
+- Thi thật: bấm đúp vào "ThiThat_ToanManHinh.bat".
+  Máy sẽ mở toàn màn hình, ẩn thanh địa chỉ, nút của trình duyệt
+  -> thí sinh không thoát ra ngoài hay tra cứu được.
+
+- Chạy thử / xem trước: bấm đúp "ChayThu_CuaSo.bat" (mở cửa sổ bình thường).
+
+
+B. CÁCH THOÁT KHI ĐANG THI (dành cho giám thị)
+---------------------------------------------
+- Nhấn tổ hợp phím:  Ctrl + W   (hoặc  Alt + F4)  để đóng.
+
+
+C. NẾU BẤM .BAT KHÔNG CHẠY
+--------------------------
+- Có thể mở trực tiếp: bấm đúp vào "PhanMemThi_VLNCN.html"
+  (mở bằng Microsoft Edge hoặc Google Chrome). Vẫn chạy offline bình thường,
+  chỉ khác là không tự khóa toàn màn hình.
+
+- File .bat dùng Microsoft Edge (có sẵn trên mọi máy Windows 10/11) hoặc
+  Google Chrome. Không cần cài thêm phần mềm.
+
+
+D. TẠO SHORTCUT RA MÀN HÌNH DESKTOP (tùy chọn)
+----------------------------------------------
+- Bấm chuột phải vào "ThiThat_ToanManHinh.bat" -> Send to -> Desktop.
+- Có thể đổi tên shortcut thành "PHẦN MỀM THI VLNCN" và đổi icon cho đẹp.
+
+
+E. DÙNG TRÊN NHIỀU MÁY / USB
+----------------------------
+- Chép cả thư mục (3 file) sang USB hoặc từng máy tính là dùng được ngay,
+  không cần cài đặt, không cần mạng.
