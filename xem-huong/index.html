@@ -200,11 +200,14 @@ $("btnCompass").addEventListener("click",async()=>{
   const btn=$("btnCompass"),note=$("cmpNote");
   if(live){live=false;window.removeEventListener("deviceorientationabsolute",onOri);window.removeEventListener("deviceorientation",onOri);
     btn.textContent="Bật la bàn điện thoại";btn.classList.remove("ghost");return;}
-  try{
-    if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
-      const p=await DeviceOrientationEvent.requestPermission();if(p!=="granted")throw new Error("denied");}
-  }catch(err){note.textContent="Chưa được cấp quyền cảm biến. Kéo vòng la bàn để chọn hướng bằng tay.";return;}
+  if(!window.isSecureContext){
+    note.textContent="Trang đang mở trực tiếp từ bộ nhớ máy ("+location.protocol+"//), trình duyệt chặn la bàn. Hãy mở qua link https:// (ví dụ GitHub Pages). Tạm thời kéo vòng la bàn để chọn hướng bằng tay.";return;}
   if(typeof DeviceOrientationEvent==="undefined"){note.textContent="Thiết bị không có la bàn. Kéo vòng la bàn để chọn hướng.";return;}
+  if(typeof DeviceOrientationEvent.requestPermission==="function"){
+    let p="granted";
+    try{p=await DeviceOrientationEvent.requestPermission();}catch(err){p="error";}
+    if(p==="denied"){note.textContent="Bạn đã từ chối quyền cảm biến. Vào cài đặt trình duyệt cho phép \"Chuyển động và hướng\" rồi tải lại trang.";return;}
+  }
   live=true;gotData=false;btn.textContent="Tắt la bàn (chọn bằng tay)";btn.classList.add("ghost");
   if("ondeviceorientationabsolute" in window)window.addEventListener("deviceorientationabsolute",onOri);
   else window.addEventListener("deviceorientation",onOri);
