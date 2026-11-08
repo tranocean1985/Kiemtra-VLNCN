@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>[hidden]{display:none!important}body{margin:0}</style></head><body>
+<title>La Bàn Hướng Nhà</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@600;700&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+<style>
+/* Bố cục: 1 cột kiểu ứng dụng điện thoại — thẻ nhập tuổi, la bàn bát quái, bảng 8 hướng */
+:root{
+  --bg:#F2F4F1; --surface:#FFFFFF; --fg:#1C2420; --muted:#5C6862; --line:#D8DED9;
+  --accent:#B23A2A; --gold:#9A7426; --good:#2E7D4F; --good-bg:#E3F1E8; --bad:#B23A2A; --bad-bg:#F7E4E1;
+  --display:"Noto Serif",Georgia,"Times New Roman",serif;
+  --body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121715; --surface:#1B221F; --fg:#E7ECE8; --muted:#9AA7A0; --line:#2C3632;
+  --accent:#E0634F; --gold:#D4AE5A; --good:#5FC08A; --good-bg:#1D3326; --bad:#E0634F; --bad-bg:#3A201C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121715; --surface:#1B221F; --fg:#E7ECE8; --muted:#9AA7A0; --line:#2C3632;
+  --accent:#E0634F; --gold:#D4AE5A; --good:#5FC08A; --good-bg:#1D3326; --bad:#E0634F; --bad-bg:#3A201C; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 32px}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header h1{font-family:var(--display);font-size:1.6rem;margin:0;text-wrap:balance}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.lbl{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 120px;min-width:0}
+input,select,button{font:inherit;color:inherit}
+input[type=number],select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:1.05rem}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;padding:10px;border:0;background:var(--bg);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--fg);color:var(--bg);font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.cung{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cung b{font-family:var(--display);font-size:1.9rem;color:var(--accent)}
+.cung span{color:var(--muted)}
+.chip{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:600;border:1px solid var(--gold);color:var(--gold)}
+.dialbox{position:relative;width:100%;max-width:340px;aspect-ratio:1;margin:0 auto;touch-action:none;user-select:none}
+.dialbox svg{width:100%;height:100%;display:block}
+#dial{transition:transform .15s linear}
+@media (prefers-reduced-motion:reduce){#dial{transition:none}}
+.needle{position:absolute;left:50%;top:-4px;transform:translateX(-50%);width:0;height:0;
+  border-left:11px solid transparent;border-right:11px solid transparent;border-top:20px solid var(--accent)}
+.readout{text-align:center}
+.readout .deg{font-family:var(--display);font-size:2.4rem;font-variant-numeric:tabular-nums;line-height:1.1}
+.readout .dir{font-size:1.1rem;font-weight:600}
+.verdict{padding:10px 12px;border-radius:10px;font-weight:600;text-align:center}
+.verdict.good{background:var(--good-bg);color:var(--good)}
+.verdict.bad{background:var(--bad-bg);color:var(--bad)}
+.btn{padding:12px;border-radius:10px;border:1px solid var(--fg);background:var(--fg);color:var(--bg);font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--fg)}
+.note{font-size:.85rem;color:var(--muted);margin:0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}
+td:first-child{white-space:nowrap;font-weight:600}
+tr.g td:first-child{color:var(--good)} tr.b td:first-child{color:var(--bad)}
+td small{color:var(--muted);display:block}
+tr.hit td{background:var(--bg)}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>La Bàn Hướng Nhà</h1>
+    <p>Xem hướng nhà, hướng cửa, hướng bàn làm việc theo Bát trạch</p>
+  </header>
+
+  <section class="card" aria-labelledby="t1">
+    <div class="lbl" id="t1">Gia chủ</div>
+    <div class="row">
+      <div>
+        <label class="note" for="nam">Năm sinh (âm lịch)</label>
+        <input id="nam" type="number" inputmode="numeric" min="1900" max="2100" value="1985">
+      </div>
+      <div>
+        <span class="note">Giới tính</span>
+        <div class="seg" role="group" aria-label="Giới tính">
+          <button id="gNam" aria-pressed="true">Nam</button>
+          <button id="gNu" aria-pressed="false">Nữ</button>
+        </div>
+      </div>
+    </div>
+    <div class="cung"><b id="cungTen">Càn</b><span id="cungInfo"></span></div>
+    <p class="note">Sinh trước Tết Nguyên đán thì nhập năm trước đó (ví dụ sinh 20/01/1986 dương lịch → nhập 1985).</p>
+  </section>
+
+  <section class="card" aria-labelledby="t2">
+    <div class="lbl" id="t2">La bàn</div>
+    <div class="dialbox" id="dialbox">
+      <svg viewBox="-160 -160 320 320" aria-hidden="true"><g id="dial"></g></svg>
+      <div class="needle"></div>
+    </div>
+    <div class="readout">
+      <div class="deg" id="deg">0°</div>
+      <div class="dir" id="dir">Bắc</div>
+    </div>
+    <div class="verdict good" id="verdict">—</div>
+    <button class="btn" id="btnCompass">Bật la bàn điện thoại</button>
+    <p class="note" id="cmpNote">Cầm điện thoại nằm ngang, đứng trong nhà quay mặt ra cửa chính, đầu máy hướng ra ngoài: số đo là hướng nhà. Không có cảm biến thì kéo vòng la bàn để chọn hướng.</p>
+  </section>
+
+  <section class="card" aria-labelledby="t3">
+    <div class="lbl" id="t3">8 hướng của gia chủ</div>
+    <table><tbody id="tbl"></tbody></table>
+  </section>
+
+  <p class="note">Tham khảo theo phương pháp Bát trạch (cung phi). Kết quả la bàn điện thoại có thể sai lệch do nam châm, sắt thép gần máy; nên đo vài lần ở các vị trí khác nhau.</p>
+</div>
+
+<script>
+(function(){
+const DIRS=["Bắc","Đông Bắc","Đông","Đông Nam","Nam","Tây Nam","Tây","Tây Bắc"]; // index = sector 0..7 (45° mỗi cung)
+const CUNG={1:"Khảm",2:"Khôn",3:"Chấn",4:"Tốn",6:"Càn",7:"Đoài",8:"Cấn",9:"Ly"};
+const HANH={1:"Thủy",2:"Thổ",3:"Mộc",4:"Mộc",6:"Kim",7:"Kim",8:"Thổ",9:"Hỏa"};
+const DONG=[1,3,4,9];
+// thứ tự: Sinh khí, Thiên y, Diên niên, Phục vị, Tuyệt mệnh, Ngũ quỷ, Lục sát, Họa hại (index trong DIRS)
+const BT={1:[3,2,4,0,5,1,7,6],9:[2,3,0,4,7,6,5,1],3:[4,0,3,2,6,7,1,5],4:[0,4,2,3,1,5,6,7],
+          6:[6,1,5,7,4,2,0,3],2:[1,6,7,5,0,3,4,2],8:[5,7,6,1,3,0,2,4],7:[7,5,1,6,2,4,3,0]};
+const SAO=[["Sinh khí","Tốt nhất: tài lộc, danh tiếng, thăng tiến",1],["Thiên y","Sức khỏe, quý nhân giúp đỡ",1],
+  ["Diên niên","Gia đạo hòa thuận, bền vững",1],["Phục vị","Bình yên, vững vàng, hợp bàn thờ, bàn học",1],
+  ["Tuyệt mệnh","Xấu nhất: tổn hại sức khỏe, tài sản",0],["Ngũ quỷ","Thị phi, mất mát, tai họa",0],
+  ["Lục sát","Bất hòa, kiện tụng, tình cảm trắc trở",0],["Họa hại","Rủi ro nhỏ, không thuận lợi",0]];
+const CAN=["Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý"];
+const CHI=["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"];
+
+let male=true, heading=0, kua=6, map=[];
+const $=id=>document.getElementById(id);
+
+function calcKua(y,m){let r=y%9;let k=m?(11-r)%9:(r+4)%9;if(k===0)k=9;if(k===5)k=m?2:8;return k;}
+function sector(h){return Math.floor(((h+22.5)%360)/45);}
+
+function update(){
+  const y=parseInt($("nam").value,10);
+  if(!(y>=1900&&y<=2100)){$("cungInfo").textContent="Nhập năm từ 1900 đến 2100";return;}
+  kua=calcKua(y,male);
+  $("cungTen").textContent=CUNG[kua];
+  $("cungInfo").innerHTML=CAN[(y+6)%10]+" "+CHI[(y+8)%12]+" · hành "+HANH[kua]+' · <span class="chip">'+(DONG.includes(kua)?"Đông tứ mệnh":"Tây tứ mệnh")+"</span>";
+  map=new Array(8);BT[kua].forEach((d,i)=>map[d]=i);
+  drawDial();renderTable();renderHeading();
+  try{localStorage.setItem("huongnha",JSON.stringify({y,male}))}catch(e){}
+}
+
+function drawDial(){
+  const css=getComputedStyle(document.documentElement);
+  const c=n=>css.getPropertyValue(n).trim();
+  let s='<circle r="156" fill="'+c("--surface")+'" stroke="'+c("--gold")+'" stroke-width="2"/>';
+  for(let i=0;i<8;i++){
+    const a0=(i*45-22.5-90)*Math.PI/180,a1=(i*45+22.5-90)*Math.PI/180,R=150,r=62;
+    const p=(a,R)=>(R*Math.cos(a)).toFixed(1)+","+(R*Math.sin(a)).toFixed(1);
+    const good=SAO[map[i]][2];
+    s+='<path d="M'+p(a0,r)+" L"+p(a0,R)+" A"+R+","+R+" 0 0 1 "+p(a1,R)+" L"+p(a1,r)+" A"+r+","+r+' 0 0 0 '+p(a0,r)+'Z" fill="'+c(good?"--good-bg":"--bad-bg")+'" stroke="'+c("--line")+'"/>';
+    const am=(i*45-90)*Math.PI/180;
+    const tx=x=>(x*Math.cos(am)).toFixed(1), ty=y=>(y*Math.sin(am)).toFixed(1);
+    s+='<g transform="translate('+tx(126)+','+ty(126)+') rotate('+(i*45)+')"><text text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="'+(i===0?c("--accent"):c("--fg"))+'" font-family="Be Vietnam Pro,system-ui,sans-serif">'+DIRS[i]+'</text></g>';
+    s+='<g transform="translate('+tx(92)+','+ty(92)+') rotate('+(i*45)+')"><text text-anchor="middle" dominant-baseline="middle" font-size="11" fill="'+c(good?"--good":"--bad")+'" font-family="Be Vietnam Pro,system-ui,sans-serif">'+SAO[map[i]][0]+'</text></g>';
+  }
+  for(let d=0;d<360;d+=5){const a=(d-90)*Math.PI/180,l=d%45===0?10:(d%15===0?6:3);
+    s+='<line x1="'+(156*Math.cos(a)).toFixed(1)+'" y1="'+(156*Math.sin(a)).toFixed(1)+'" x2="'+((156-l)*Math.cos(a)).toFixed(1)+'" y2="'+((156-l)*Math.sin(a)).toFixed(1)+'" stroke="'+c("--gold")+'" stroke-width="1"/>';}
+  s+='<circle r="60" fill="'+c("--bg")+'" stroke="'+c("--gold")+'"/><text text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="700" fill="'+c("--accent")+'" font-family="Noto Serif,Georgia,serif">'+CUNG[kua]+'</text>';
+  $("dial").innerHTML=s;
+}
+
+function renderTable(){
+  let h="";
+  BT[kua].forEach((d,i)=>{h+='<tr class="'+(SAO[i][2]?"g":"b")+'" data-d="'+d+'"><td>'+DIRS[d]+'</td><td>'+SAO[i][0]+'<small>'+SAO[i][1]+'</small></td></tr>';});
+  $("tbl").innerHTML=h;
+}
+
+function renderHeading(){
+  const h=((heading%360)+360)%360, sct=sector(h), sao=SAO[map[sct]];
+  $("dial").style.transform="rotate("+(-h)+"deg)";
+  $("deg").textContent=Math.round(h)+"°";
+  $("dir").textContent="Hướng "+DIRS[sct];
+  const v=$("verdict");v.className="verdict "+(sao[2]?"good":"bad");
+  v.textContent=(sao[2]?"Hợp: ":"Không hợp: ")+sao[0]+" — "+sao[1];
+  document.querySelectorAll("#tbl tr").forEach(r=>r.classList.toggle("hit",+r.dataset.d===sct));
+}
+
+// Kéo tay
+let drag=null;const box=$("dialbox");
+function ang(e){const r=box.getBoundingClientRect();return Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2))*180/Math.PI;}
+box.addEventListener("pointerdown",e=>{if(live)return;drag={a:ang(e),h:heading};box.setPointerCapture(e.pointerId);});
+box.addEventListener("pointermove",e=>{if(!drag)return;heading=drag.h-(ang(e)-drag.a);renderHeading();});
+box.addEventListener("pointerup",()=>drag=null);box.addEventListener("pointercancel",()=>drag=null);
+
+// La bàn thật
+let live=false,gotData=false;
+function onOri(e){
+  let h=null;
+  if(typeof e.webkitCompassHeading==="number")h=e.webkitCompassHeading;
+  else if(e.absolute&&typeof e.alpha==="number")h=360-e.alpha;
+  if(h===null)return;
+  gotData=true;
+  const so=(screen.orientation&&screen.orientation.angle)||0;
+  heading=h+so;renderHeading();
+}
+$("btnCompass").addEventListener("click",async()=>{
+  const btn=$("btnCompass"),note=$("cmpNote");
+  if(live){live=false;window.removeEventListener("deviceorientationabsolute",onOri);window.removeEventListener("deviceorientation",onOri);
+    btn.textContent="Bật la bàn điện thoại";btn.classList.remove("ghost");return;}
+  try{
+    if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
+      const p=await DeviceOrientationEvent.requestPermission();if(p!=="granted")throw new Error("denied");}
+  }catch(err){note.textContent="Chưa được cấp quyền cảm biến. Kéo vòng la bàn để chọn hướng bằng tay.";return;}
+  if(typeof DeviceOrientationEvent==="undefined"){note.textContent="Thiết bị không có la bàn. Kéo vòng la bàn để chọn hướng.";return;}
+  live=true;gotData=false;btn.textContent="Tắt la bàn (chọn bằng tay)";btn.classList.add("ghost");
+  if("ondeviceorientationabsolute" in window)window.addEventListener("deviceorientationabsolute",onOri);
+  else window.addEventListener("deviceorientation",onOri);
+  setTimeout(()=>{if(live&&!gotData){live=false;btn.textContent="Bật la bàn điện thoại";btn.classList.remove("ghost");
+    note.textContent="Không nhận được tín hiệu la bàn (máy không có cảm biến hoặc trang đang mở trong khung bị chặn). Kéo vòng la bàn để chọn hướng bằng tay.";}},3000);
+});
+
+function setSex(m){male=m;$("gNam").setAttribute("aria-pressed",m);$("gNu").setAttribute("aria-pressed",!m);update();}
+$("gNam").onclick=()=>setSex(true);$("gNu").onclick=()=>setSex(false);
+$("nam").addEventListener("input",update);
+try{const s=JSON.parse(localStorage.getItem("huongnha")||"null");if(s){$("nam").value=s.y;male=s.male;$("gNam").setAttribute("aria-pressed",male);$("gNu").setAttribute("aria-pressed",!male);}}catch(e){}
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",drawDial);
+heading=135;update();
+})();
+</script>
+
+</body></html>
