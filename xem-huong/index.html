@@ -200,13 +200,14 @@ $("btnCompass").addEventListener("click",async()=>{
   const btn=$("btnCompass"),note=$("cmpNote");
   if(live){live=false;window.removeEventListener("deviceorientationabsolute",onOri);window.removeEventListener("deviceorientation",onOri);
     btn.textContent="Bật la bàn điện thoại";btn.classList.remove("ghost");return;}
-  if(!window.isSecureContext){
-    note.textContent="Trang đang mở trực tiếp từ bộ nhớ máy ("+location.protocol+"//), trình duyệt chặn la bàn. Hãy mở qua link https:// (ví dụ GitHub Pages). Tạm thời kéo vòng la bàn để chọn hướng bằng tay.";return;}
+  const local=location.protocol!=="https:"&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const MSG_LOCAL="Trang đang mở trực tiếp từ tệp trong máy ("+location.protocol+"//, ví dụ mở từ Zalo hoặc Tải xuống) nên trình duyệt khóa la bàn. Hãy mở qua link https:// (Netlify, GitHub Pages). Tạm thời kéo vòng la bàn để chọn hướng bằng tay.";
+  if(local){note.textContent=MSG_LOCAL;return;}
   if(typeof DeviceOrientationEvent==="undefined"){note.textContent="Thiết bị không có la bàn. Kéo vòng la bàn để chọn hướng.";return;}
   if(typeof DeviceOrientationEvent.requestPermission==="function"){
     let p="granted";
     try{p=await DeviceOrientationEvent.requestPermission();}catch(err){p="error";}
-    if(p==="denied"){note.textContent="Bạn đã từ chối quyền cảm biến. Vào cài đặt trình duyệt cho phép \"Chuyển động và hướng\" rồi tải lại trang.";return;}
+    if(p==="denied"){note.textContent="Trình duyệt chưa cho phép cảm biến. Vào Cài đặt trình duyệt → Cài đặt trang web → Cảm biến chuyển động, chọn Cho phép, rồi tải lại trang.";return;}
   }
   live=true;gotData=false;btn.textContent="Tắt la bàn (chọn bằng tay)";btn.classList.add("ghost");
   if("ondeviceorientationabsolute" in window)window.addEventListener("deviceorientationabsolute",onOri);
