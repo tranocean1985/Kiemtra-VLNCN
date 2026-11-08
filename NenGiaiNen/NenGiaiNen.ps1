@@ -33,6 +33,84 @@ if ($CheDo -eq 'Nen' -or $CheDo -eq 'GiaiNen') {
 foreach ($d in $DuongDan) { if ($d) { $dsBanDau.Add($d) } }
 
 # ---------------------------------------------------------------------
+#  GOM FILE KHI GOI TU MENU CHUOT PHAI
+#  Explorer mo 1 tien trinh cho MOI file duoc chon -> gom lai, xu ly chung 1 lan
+# ---------------------------------------------------------------------
+function Doc-Tep([string]$p) {
+    for ($t = 0; $t -lt 20; $t++) {
+        if (-not (Test-Path -LiteralPath $p)) { return $null }
+        try {
+            $fs = New-Object IO.FileStream($p, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+            $sr = New-Object IO.StreamReader($fs, [Text.Encoding]::UTF8)
+            $nd = $sr.ReadToEnd(); $sr.Close()
+            return $nd
+        } catch { Start-Sleep -Milliseconds 30 }
+    }
+    return $null
+}
+
+function Gom-TuMenu([string]$cheDo, [string]$duongDan) {
+    $hangDoi = Join-Path $env:TEMP ('NenGiaiNen_' + $cheDo + '.txt')
+    $token = [string]$PID + '|' + $duongDan
+    for ($t = 0; $t -lt 100; $t++) {
+        try {
+            $fs = New-Object IO.FileStream($hangDoi, [IO.FileMode]::Append, [IO.FileAccess]::Write, [IO.FileShare]::Read)
+            $b = [Text.Encoding]::UTF8.GetBytes($token + "`n")
+            $fs.Write($b, 0, $b.Length); $fs.Close()
+            break
+        } catch { Start-Sleep -Milliseconds 30 }
+    }
+
+    $mutex = New-Object Threading.Mutex($false, ('Local\NenGiaiNen_' + $cheDo))
+    $hetHan = (Get-Date).AddMinutes(10)
+    while ($true) {
+        $nd = Doc-Tep $hangDoi
+        if ($null -eq $nd -or -not (($nd -split "`n") -contains $token)) { return $null }   # tien trinh khac da nhan file nay
+        $co = $false
+        try { $co = $mutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $co = $true }
+        if ($co) { break }
+        if ((Get-Date) -gt $hetHan) { return $null }
+        Start-Sleep -Milliseconds 150
+    }
+
+    # Tien trinh chinh: doi cac tien trinh khac ghi xong (danh sach ngung tang)
+    $truoc = -1; $dem = 0
+    for ($t = 0; $t -lt 60; $t++) {
+        Start-Sleep -Milliseconds 150
+        $dai = 0
+        try { $dai = ([IO.FileInfo]$hangDoi).Length } catch { }
+        if ($dai -eq $truoc) { $dem++; if ($dem -ge 4) { break } } else { $dem = 0; $truoc = $dai }
+    }
+    $rieng = $hangDoi + '.' + $PID
+    for ($t = 0; $t -lt 100; $t++) {
+        if (-not (Test-Path -LiteralPath $hangDoi)) { break }
+        try { [IO.File]::Move($hangDoi, $rieng); break } catch { Start-Sleep -Milliseconds 30 }
+    }
+    $nd = Doc-Tep $rieng
+    try { Remove-Item -LiteralPath $rieng -Force -ErrorAction SilentlyContinue } catch { }
+    try { $mutex.ReleaseMutex() } catch { }
+
+    $ds = New-Object System.Collections.Generic.List[string]
+    if ($nd) {
+        foreach ($dong in ($nd -split "`n")) {
+            $i = $dong.IndexOf('|')
+            if ($i -lt 0) { continue }
+            $p = $dong.Substring($i + 1).Trim()
+            if ($p -and -not $ds.Contains($p)) { $ds.Add($p) }
+        }
+    }
+    if ($ds.Count -eq 0) { return $null }
+    return ,$ds
+}
+
+if ($script:TuDong -and $dsBanDau.Count -eq 1) {
+    $gom = Gom-TuMenu $script:TuDong $dsBanDau[0]
+    if ($null -eq $gom) { exit }
+    $dsBanDau = $gom
+}
+
+
+# ---------------------------------------------------------------------
 #  HAM TIEN ICH
 # ---------------------------------------------------------------------
 function Lay-DuongDanMoi([string]$path, [bool]$laThuMuc) {
@@ -267,98 +345,223 @@ function Giai-Nen([string]$tep, [string]$dich, [scriptblock]$tienDo) {
 # ---------------------------------------------------------------------
 #  GIAO DIEN
 # ---------------------------------------------------------------------
+function Mau([string]$hex) { return [System.Drawing.ColorTranslator]::FromHtml($hex) }
+$MauChinh   = Mau '#1F4E79'
+$MauNen     = Mau '#F4F6F9'
+$MauVien    = Mau '#D5DBE3'
+$MauChuPhu  = Mau '#6B7785'
+$MauXanhLa  = Mau '#2E7D32'
+$MauXanhLaD = Mau '#256B29'
+$MauXanhDuong  = Mau '#1565C0'
+$MauXanhDuongD = Mau '#0F4F99'
+
 $fontThuong = New-Object System.Drawing.Font('Segoe UI', 10)
-$fontDam = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
+$fontNho    = New-Object System.Drawing.Font('Segoe UI', 9)
+$fontNut    = New-Object System.Drawing.Font('Segoe UI Semibold', 11)
+$fontTieuDe = New-Object System.Drawing.Font('Segoe UI Semibold', 16)
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = $TieuDe
-$form.Size = New-Object System.Drawing.Size(660, 540)
-$form.MinimumSize = New-Object System.Drawing.Size(560, 460)
+$form.ClientSize = New-Object System.Drawing.Size(760, 520)
+$form.MinimumSize = New-Object System.Drawing.Size(640, 460)
 $form.StartPosition = 'CenterScreen'
 $form.Font = $fontThuong
+$form.BackColor = $MauNen
 $form.AllowDrop = $true
 try { $form.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Join-Path $env:SystemRoot 'explorer.exe')) } catch { }
 
-$lblHD = New-Object System.Windows.Forms.Label
-$lblHD.Text = 'Kéo thả file / thư mục vào ô bên dưới (hoặc bấm nút Thêm), rồi chọn NÉN hoặc GIẢI NÉN.'
-$lblHD.Location = New-Object System.Drawing.Point(12, 10)
-$lblHD.Size = New-Object System.Drawing.Size(620, 22)
-$lblHD.Anchor = 'Top, Left, Right'
-$form.Controls.Add($lblHD)
+# ----- Than (giua) -----
+$than = New-Object System.Windows.Forms.Panel
+$than.Dock = 'Fill'
+$than.BackColor = $MauNen
+$form.Controls.Add($than)
 
-$lst = New-Object System.Windows.Forms.ListBox
-$lst.Location = New-Object System.Drawing.Point(12, 36)
-$lst.Size = New-Object System.Drawing.Size(470, 300)
-$lst.Anchor = 'Top, Bottom, Left, Right'
-$lst.SelectionMode = 'MultiExtended'
-$lst.HorizontalScrollbar = $true
-$lst.IntegralHeight = $false
-$lst.AllowDrop = $true
-$form.Controls.Add($lst)
+# ----- Dau trang -----
+$dau = New-Object System.Windows.Forms.Panel
+$dau.Dock = 'Top'
+$dau.Height = 70
+$dau.BackColor = $MauChinh
+$form.Controls.Add($dau)
 
-function Tao-Nut([string]$chu, [int]$x, [int]$y, [int]$rong, [int]$cao) {
+$lblTieuDe = New-Object System.Windows.Forms.Label
+$lblTieuDe.Text = 'Nén & Giải nén'
+$lblTieuDe.Font = $fontTieuDe
+$lblTieuDe.ForeColor = [System.Drawing.Color]::White
+$lblTieuDe.AutoSize = $true
+$lblTieuDe.Location = New-Object System.Drawing.Point(18, 8)
+$dau.Controls.Add($lblTieuDe)
+
+$lblPhu = New-Object System.Windows.Forms.Label
+$lblPhu.Text = 'Nén ZIP  •  Giải nén ZIP, RAR, 7Z, TAR...  •  Miễn phí, không cần cài đặt'
+$lblPhu.Font = $fontNho
+$lblPhu.ForeColor = Mau '#C9DAEB'
+$lblPhu.AutoSize = $true
+$lblPhu.Location = New-Object System.Drawing.Point(21, 44)
+$dau.Controls.Add($lblPhu)
+
+# ----- Chan trang -----
+$chan = New-Object System.Windows.Forms.Panel
+$chan.Dock = 'Bottom'
+$chan.Height = 66
+$chan.BackColor = [System.Drawing.Color]::White
+$form.Controls.Add($chan)
+
+$vach = New-Object System.Windows.Forms.Panel
+$vach.Dock = 'Top'; $vach.Height = 1; $vach.BackColor = $MauVien
+$chan.Controls.Add($vach)
+
+$pb = New-Object System.Windows.Forms.ProgressBar
+$pb.Location = New-Object System.Drawing.Point(18, 14)
+$pb.Size = New-Object System.Drawing.Size(724, 14)
+$pb.Anchor = 'Top, Left, Right'
+$chan.Controls.Add($pb)
+
+$lblTT = New-Object System.Windows.Forms.Label
+$lblTT.Text = 'Sẵn sàng.'
+$lblTT.Font = $fontNho
+$lblTT.ForeColor = $MauChuPhu
+$lblTT.Location = New-Object System.Drawing.Point(16, 34)
+$lblTT.Size = New-Object System.Drawing.Size(728, 22)
+$lblTT.Anchor = 'Top, Left, Right'
+$lblTT.AutoEllipsis = $true
+$chan.Controls.Add($lblTT)
+
+# ----- Danh sach file -----
+# Kich thuoc vung than: 760 x (520 - 70 - 66) = 760 x 384
+$lv = New-Object System.Windows.Forms.ListView
+$lv.View = 'Details'
+$lv.FullRowSelect = $true
+$lv.HideSelection = $false
+$lv.BorderStyle = 'FixedSingle'
+$lv.Location = New-Object System.Drawing.Point(18, 16)
+$lv.Size = New-Object System.Drawing.Size(530, 292)
+$lv.Anchor = 'Top, Bottom, Left, Right'
+$lv.AllowDrop = $true
+[void]$lv.Columns.Add('Tên', 230)
+[void]$lv.Columns.Add('Dung lượng', 90, [System.Windows.Forms.HorizontalAlignment]::Right)
+[void]$lv.Columns.Add('Vị trí', 400)
+$anh = New-Object System.Windows.Forms.ImageList
+$anh.ColorDepth = 'Depth32Bit'
+$anh.ImageSize = New-Object System.Drawing.Size(16, 16)
+$lv.SmallImageList = $anh
+$than.Controls.Add($lv)
+
+$lblTrong = New-Object System.Windows.Forms.Label
+$lblTrong.Text = 'Kéo thả file / thư mục vào đây' + "`n`n" + 'hoặc bấm nút  "Thêm file"  /  "Thêm thư mục"'
+$lblTrong.TextAlign = 'MiddleCenter'
+$lblTrong.Dock = 'Fill'
+$lblTrong.ForeColor = Mau '#8A96A3'
+$lblTrong.BackColor = [System.Drawing.Color]::White
+$lblTrong.Font = New-Object System.Drawing.Font('Segoe UI', 11)
+$lblTrong.AllowDrop = $true
+$lv.Controls.Add($lblTrong)
+
+# ----- Nut bam -----
+function Tao-Nut([string]$chu, [int]$y, [int]$cao, $mauNen, $mauDam) {
     $b = New-Object System.Windows.Forms.Button
     $b.Text = $chu
-    $b.Location = New-Object System.Drawing.Point($x, $y)
-    $b.Size = New-Object System.Drawing.Size($rong, $cao)
+    $b.Location = New-Object System.Drawing.Point(564, $y)
+    $b.Size = New-Object System.Drawing.Size(178, $cao)
     $b.Anchor = 'Top, Right'
-    $form.Controls.Add($b)
+    $b.FlatStyle = 'Flat'
+    $b.Cursor = [System.Windows.Forms.Cursors]::Hand
+    if ($mauNen) {
+        $b.BackColor = $mauNen
+        $b.ForeColor = [System.Drawing.Color]::White
+        $b.Font = $fontNut
+        $b.FlatAppearance.BorderSize = 0
+        $b.FlatAppearance.MouseOverBackColor = $mauDam
+        $b.FlatAppearance.MouseDownBackColor = $mauDam
+    } else {
+        $b.BackColor = [System.Drawing.Color]::White
+        $b.ForeColor = Mau '#2B3440'
+        $b.FlatAppearance.BorderColor = $MauVien
+        $b.FlatAppearance.MouseOverBackColor = Mau '#EAF1FA'
+        $b.FlatAppearance.MouseDownBackColor = Mau '#DCE8F6'
+    }
+    $than.Controls.Add($b)
     return $b
 }
 
-$btnThemFile   = Tao-Nut 'Thêm file...'     492 36  140 34
-$btnThemThuMuc = Tao-Nut 'Thêm thư mục...'  492 76  140 34
-$btnXoaChon    = Tao-Nut 'Bỏ mục đã chọn'   492 116 140 34
-$btnXoaHet     = Tao-Nut 'Xóa danh sách'    492 156 140 34
+$btnNen   = Tao-Nut 'NÉN thành ZIP' 16 54 $MauXanhLa $MauXanhLaD
+$btnGiai  = Tao-Nut 'GIẢI NÉN'      80 54 $MauXanhDuong $MauXanhDuongD
+$btnThemFile   = Tao-Nut '+  Thêm file...'     146 36 $null $null
+$btnThemThuMuc = Tao-Nut '+  Thêm thư mục...'  188 36 $null $null
+$btnXoaChon    = Tao-Nut 'Bỏ mục đã chọn'      230 36 $null $null
+$btnXoaHet     = Tao-Nut 'Xóa danh sách'       272 36 $null $null
 
-$btnNen = Tao-Nut 'NÉN thành ZIP' 492 220 140 50
-$btnNen.Font = $fontDam
-$btnNen.BackColor = [System.Drawing.Color]::FromArgb(220, 240, 220)
-
-$btnGiai = Tao-Nut 'GIẢI NÉN' 492 280 140 50
-$btnGiai.Font = $fontDam
-$btnGiai.BackColor = [System.Drawing.Color]::FromArgb(215, 230, 250)
-
+# ----- Tuy chon -----
 $chkNoiKhac = New-Object System.Windows.Forms.CheckBox
 $chkNoiKhac.Text = 'Tự chọn nơi lưu kết quả (mặc định: cùng thư mục với file gốc)'
-$chkNoiKhac.Location = New-Object System.Drawing.Point(12, 344)
-$chkNoiKhac.Size = New-Object System.Drawing.Size(620, 24)
+$chkNoiKhac.Location = New-Object System.Drawing.Point(18, 320)
+$chkNoiKhac.Size = New-Object System.Drawing.Size(720, 24)
 $chkNoiKhac.Anchor = 'Bottom, Left, Right'
-$form.Controls.Add($chkNoiKhac)
+$than.Controls.Add($chkNoiKhac)
 
 $chkMo = New-Object System.Windows.Forms.CheckBox
 $chkMo.Text = 'Mở thư mục kết quả khi xong'
 $chkMo.Checked = $true
-$chkMo.Location = New-Object System.Drawing.Point(12, 370)
-$chkMo.Size = New-Object System.Drawing.Size(620, 24)
+$chkMo.Location = New-Object System.Drawing.Point(18, 346)
+$chkMo.Size = New-Object System.Drawing.Size(720, 24)
 $chkMo.Anchor = 'Bottom, Left, Right'
-$form.Controls.Add($chkMo)
-
-$pb = New-Object System.Windows.Forms.ProgressBar
-$pb.Location = New-Object System.Drawing.Point(12, 402)
-$pb.Size = New-Object System.Drawing.Size(620, 22)
-$pb.Anchor = 'Bottom, Left, Right'
-$form.Controls.Add($pb)
-
-$lblTT = New-Object System.Windows.Forms.Label
-$lblTT.Text = 'Sẵn sàng.'
-$lblTT.Location = New-Object System.Drawing.Point(12, 430)
-$lblTT.Size = New-Object System.Drawing.Size(620, 44)
-$lblTT.Anchor = 'Bottom, Left, Right'
-$lblTT.AutoEllipsis = $true
-$form.Controls.Add($lblTT)
+$than.Controls.Add($chkMo)
 
 # ---------------------------------------------------------------------
 #  XU LY SU KIEN
 # ---------------------------------------------------------------------
+function Doi-DungLuong([double]$b) {
+    if ($b -lt 1KB) { return ('{0} B' -f $b) }
+    if ($b -lt 1MB) { return ('{0:N1} KB' -f ($b / 1KB)) }
+    if ($b -lt 1GB) { return ('{0:N1} MB' -f ($b / 1MB)) }
+    return ('{0:N2} GB' -f ($b / 1GB))
+}
+
+function Lay-Anh($muc) {
+    if ($muc.PSIsContainer) { $khoa = '<thu-muc>' }
+    else {
+        $khoa = $muc.Extension.ToLower()
+        if (@('.exe', '.lnk', '.ico', '') -contains $khoa) { $khoa = $muc.FullName }
+    }
+    if (-not $anh.Images.ContainsKey($khoa)) {
+        try {
+            if ($muc.PSIsContainer) { $ic = [System.Drawing.Icon]::ExtractAssociatedIcon((Join-Path $env:SystemRoot 'explorer.exe')) }
+            else { $ic = [System.Drawing.Icon]::ExtractAssociatedIcon($muc.FullName) }
+            $anh.Images.Add($khoa, $ic)
+        } catch { return '' }
+    }
+    return $khoa
+}
+
+function Cap-NhatDs {
+    $lblTrong.Visible = ($lv.Items.Count -eq 0)
+    if ($lv.Items.Count -gt 0) { $lblTT.Text = ('Danh sách: {0} mục.' -f $lv.Items.Count) }
+    else { $lblTT.Text = 'Sẵn sàng.' }
+}
+
+function Lay-DanhSach { return @($lv.Items | ForEach-Object { [string]$_.Tag }) }
+
 function Them-Muc([string[]]$ds) {
+    $daCo = @{}
+    foreach ($it in $lv.Items) { $daCo[[string]$it.Tag] = $true }
+    $lv.BeginUpdate()
     foreach ($p in $ds) {
         if (-not $p) { continue }
         if (-not (Test-Path -LiteralPath $p)) { continue }
-        $full = (Get-Item -LiteralPath $p -Force).FullName
-        if (-not $lst.Items.Contains($full)) { [void]$lst.Items.Add($full) }
+        $muc = Get-Item -LiteralPath $p -Force
+        if ($daCo.ContainsKey($muc.FullName)) { continue }
+        $daCo[$muc.FullName] = $true
+        $ten = $muc.Name; if (-not $ten) { $ten = $muc.FullName }
+        $item = New-Object System.Windows.Forms.ListViewItem($ten)
+        if ($muc.PSIsContainer) { [void]$item.SubItems.Add('Thư mục') }
+        else { [void]$item.SubItems.Add((Doi-DungLuong $muc.Length)) }
+        $cha = [IO.Path]::GetDirectoryName($muc.FullName.TrimEnd('\'))
+        [void]$item.SubItems.Add([string]$cha)
+        $item.Tag = $muc.FullName
+        $item.ImageKey = Lay-Anh $muc
+        [void]$lv.Items.Add($item)
     }
-    $lblTT.Text = ('Danh sách: {0} mục.' -f $lst.Items.Count)
+    $lv.EndUpdate()
+    Cap-NhatDs
 }
 
 function Thong-Bao([string]$nd, [string]$loai) {
@@ -369,7 +572,7 @@ function Thong-Bao([string]$nd, [string]$loai) {
 }
 
 function Khoa-GiaoDien([bool]$khoa) {
-    foreach ($c in @($btnThemFile, $btnThemThuMuc, $btnXoaChon, $btnXoaHet, $btnNen, $btnGiai, $lst, $chkNoiKhac)) { $c.Enabled = -not $khoa }
+    foreach ($c in @($btnThemFile, $btnThemThuMuc, $btnXoaChon, $btnXoaHet, $btnNen, $btnGiai, $lv, $chkNoiKhac)) { $c.Enabled = -not $khoa }
     if ($khoa) { $form.Cursor = [System.Windows.Forms.Cursors]::WaitCursor } else { $form.Cursor = [System.Windows.Forms.Cursors]::Default }
 }
 
@@ -409,8 +612,7 @@ $xuLyTha = {
     $ds = $e.Data.GetData([System.Windows.Forms.DataFormats]::FileDrop)
     if ($ds) { Them-Muc $ds }
 }
-$form.Add_DragEnter($xuLyKeoTha); $form.Add_DragDrop($xuLyTha)
-$lst.Add_DragEnter($xuLyKeoTha);  $lst.Add_DragDrop($xuLyTha)
+foreach ($c in @($form, $lv, $lblTrong)) { $c.Add_DragEnter($xuLyKeoTha); $c.Add_DragDrop($xuLyTha) }
 
 $btnThemFile.Add_Click({
     $dlg = New-Object System.Windows.Forms.OpenFileDialog
@@ -427,26 +629,28 @@ $btnThemThuMuc.Add_Click({
 })
 
 $btnXoaChon.Add_Click({
-    $chon = @($lst.SelectedItems)
-    foreach ($c in $chon) { $lst.Items.Remove($c) }
-    $lblTT.Text = ('Danh sách: {0} mục.' -f $lst.Items.Count)
+    foreach ($c in @($lv.SelectedItems)) { $lv.Items.Remove($c) }
+    Cap-NhatDs
 })
-$lst.Add_KeyDown({ param($s, $e) if ($e.KeyCode -eq 'Delete') { $btnXoaChon.PerformClick() } })
+$lv.Add_KeyDown({ param($s, $e) if ($e.KeyCode -eq 'Delete') { $btnXoaChon.PerformClick() } })
+$lv.Add_DoubleClick({
+    if ($lv.SelectedItems.Count -gt 0) { try { Start-Process explorer.exe ('/select,"{0}"' -f $lv.SelectedItems[0].Tag) } catch { } }
+})
 
-$btnXoaHet.Add_Click({ $lst.Items.Clear(); $lblTT.Text = 'Sẵn sàng.'; $pb.Value = 0 })
+$btnXoaHet.Add_Click({ $lv.Items.Clear(); $pb.Value = 0; Cap-NhatDs })
 
 # ---------- NUT NEN ----------
 $btnNen.Add_Click({
-    $items = @($lst.Items | ForEach-Object { [string]$_ })
+    $items = Lay-DanhSach
     if ($items.Count -eq 0) { Thong-Bao 'Chưa có file / thư mục nào. Hãy kéo thả hoặc bấm "Thêm".' 'canh'; return }
 
     # Goi y ten file zip
-    $dau = $items[0].TrimEnd('\')
-    $chaMacDinh = [IO.Path]::GetDirectoryName($dau)
-    if (-not $chaMacDinh) { $chaMacDinh = $dau }
+    $dauDs = $items[0].TrimEnd('\')
+    $chaMacDinh = [IO.Path]::GetDirectoryName($dauDs)
+    if (-not $chaMacDinh) { $chaMacDinh = $dauDs }
     if ($items.Count -eq 1) {
-        if (Test-Path -LiteralPath $dau -PathType Container) { $tenGoiY = [IO.Path]::GetFileName($dau) }
-        else { $tenGoiY = [IO.Path]::GetFileNameWithoutExtension($dau) }
+        if (Test-Path -LiteralPath $dauDs -PathType Container) { $tenGoiY = [IO.Path]::GetFileName($dauDs) }
+        else { $tenGoiY = [IO.Path]::GetFileNameWithoutExtension($dauDs) }
     } else {
         $tenGoiY = [IO.Path]::GetFileName($chaMacDinh.TrimEnd('\'))
     }
@@ -469,9 +673,9 @@ $btnNen.Add_Click({
     $script:TienTo = 'Đang nén '
     try {
         $boQua = Nen-Zip $items $zipPath $tienDo
-        $kb = [Math]::Round((Get-Item -LiteralPath $zipPath).Length / 1KB, 1)
-        $lblTT.Text = ('Đã nén xong: {0} ({1} KB)' -f $zipPath, $kb)
-        $nd = "Đã nén xong!`n`n$zipPath`nDung lượng: $kb KB"
+        $dl = Doi-DungLuong (Get-Item -LiteralPath $zipPath).Length
+        $lblTT.Text = ('Đã nén xong: {0} ({1})' -f $zipPath, $dl)
+        $nd = "Đã nén xong!`n`n$zipPath`nDung lượng: $dl"
         if ($boQua.Count -gt 0) {
             $nd += "`n`nCó {0} file không đọc được (đang mở hoặc bị khóa) nên bỏ qua:`n{1}" -f $boQua.Count, (($boQua | Select-Object -First 10) -join "`n")
             Thong-Bao $nd 'canh'
@@ -491,7 +695,7 @@ $btnNen.Add_Click({
 
 # ---------- NUT GIAI NEN ----------
 $btnGiai.Add_Click({
-    $items = @($lst.Items | ForEach-Object { [string]$_ })
+    $items = Lay-DanhSach
     $dsNen = @($items | Where-Object { La-FileNen $_ })
     if ($dsNen.Count -eq 0) {
         Thong-Bao ("Danh sách chưa có file nén nào.`nCác loại hỗ trợ: " + ($DuoiNen -join ', ')) 'canh'
@@ -522,7 +726,6 @@ $btnGiai.Add_Click({
             $thanhCong.Add($dich)
         } catch {
             $loi.Add(([IO.Path]::GetFileName($tep) + ': ' + $_.Exception.Message))
-            # Xoa thu muc rong neu giai nen that bai
             try {
                 if ((Test-Path -LiteralPath $dich) -and -not (Get-ChildItem -LiteralPath $dich -Force | Select-Object -First 1)) {
                     Remove-Item -LiteralPath $dich -Force
@@ -546,7 +749,18 @@ $btnGiai.Add_Click({
 # ---------------------------------------------------------------------
 #  KHOI DONG
 # ---------------------------------------------------------------------
-if ($dsBanDau.Count -gt 0) { Them-Muc $dsBanDau.ToArray() }
+if ($dsBanDau.Count -gt 0) { Them-Muc $dsBanDau.ToArray() } else { Cap-NhatDs }
+
+if ($script:TuDong) {
+    # Goi tu menu chuot phai: chi hien cua so tien trinh nho gon
+    $than.Visible = $false
+    $form.MinimumSize = New-Object System.Drawing.Size(0, 0)
+    $form.ClientSize = New-Object System.Drawing.Size(560, 136)
+    $form.FormBorderStyle = 'FixedSingle'
+    $form.MaximizeBox = $false
+    if ($script:TuDong -eq 'Nen') { $lblPhu.Text = ('Đang nén {0} mục thành file ZIP...' -f $dsBanDau.Count) }
+    else { $lblPhu.Text = ('Đang giải nén {0} file...' -f $dsBanDau.Count) }
+}
 
 $form.Add_Shown({
     $form.Activate()

@@ -5,32 +5,34 @@ Không cần cài đặt, không cần Internet, không tốn phí bản quyền
 Chạy bằng PowerShell có sẵn trong Windows 10/11.
 
 Thư mục NenGiaiNen gồm:
-  - MoPhanMem.bat            -> mở phần mềm (bấm đúp)
-  - CaiDat_MenuChuotPhai.bat -> tạo biểu tượng Desktop + menu chuột phải (chạy 1 lần)
-  - GoCaiDat.bat             -> gỡ các biểu tượng đã tạo
-  - NenGiaiNen.ps1, CaiDat.ps1 -> mã chương trình (không xóa)
+  - CaiDat_MenuChuotPhai.bat -> thêm vào menu chuột phải + biểu tượng Desktop (chạy 1 lần)
+  - MoPhanMem.bat            -> mở cửa sổ phần mềm
+  - GoCaiDat.bat             -> gỡ menu chuột phải và biểu tượng
+  - NenGiaiNen.ps1, CaiDat.ps1, GoCaiDat.ps1 -> mã chương trình (không xóa)
 
-Chép cả thư mục vào nơi cố định (ví dụ D:\NenGiaiNen), sau đó chạy
-CaiDat_MenuChuotPhai.bat một lần.
+Chép cả thư mục vào ổ cố định (ví dụ D:\NenGiaiNen), sau đó chạy
+CaiDat_MenuChuotPhai.bat một lần. Không cần quyền Admin.
+Trên Windows 11, bộ cài hỏi có bật "menu chuột phải đầy đủ" không:
+gõ C để các mục của phần mềm hiện ngay khi chuột phải (giống WinRAR).
 
 
 A. CÁCH DÙNG NHANH (CHUỘT PHẢI)
 -------------------------------
-- NÉN: chọn 1 hoặc nhiều file/thư mục > chuột phải > Send to (Gửi tới)
-  > "Nén thành ZIP". File .zip tạo ngay cạnh file gốc.
-- GIẢI NÉN: chọn file .zip/.rar/.7z > chuột phải > Send to
-  > "Giải nén tại đây". Tạo thư mục cùng tên, cạnh file gốc.
-  (Windows 11: chọn "Show more options" / "Hiện thêm tùy chọn" để thấy Send to.)
+- NÉN: chọn 1 hoặc nhiều file/thư mục > chuột phải > "Nén thành ZIP".
+  Chọn nhiều mục -> gộp chung thành 1 file .zip, đặt cạnh file gốc.
+- GIẢI NÉN: chọn 1 hoặc nhiều file .zip/.rar/.7z > chuột phải
+  > "Giải nén tại đây". Mỗi file giải nén vào thư mục cùng tên.
+  (Nếu không bật menu đầy đủ trên Windows 11: chọn "Show more options".)
 
 
 B. DÙNG CỬA SỔ PHẦN MỀM
 -----------------------
 1. Mở biểu tượng "Nén - Giải nén" trên Desktop (hoặc MoPhanMem.bat).
-2. Kéo thả file/thư mục vào ô danh sách (hoặc bấm "Thêm file...", "Thêm thư mục...").
+2. Kéo thả file/thư mục vào khung danh sách (hoặc bấm "Thêm file", "Thêm thư mục").
 3. Bấm "NÉN thành ZIP" hoặc "GIẢI NÉN".
    - Tích "Tự chọn nơi lưu kết quả" nếu muốn lưu chỗ khác.
-   - Nhiều file nén trong danh sách -> giải nén lần lượt tất cả.
    - Không ghi đè: nếu trùng tên sẽ tự đặt "Ten (1)", "Ten (2)"...
+   - Bấm đúp vào một dòng để mở vị trí file; phím Delete để bỏ dòng.
 
 
 C. LOẠI FILE HỖ TRỢ
@@ -39,20 +41,20 @@ C. LOẠI FILE HỖ TRỢ
 - Giải nén: .ZIP  -> luôn được (công cụ có sẵn của Windows).
             .RAR, .7Z, .TAR, .GZ, .BZ2, .XZ, .CAB, .ISO
               + Windows 11: giải nén được trực tiếp (dùng tar.exe có sẵn).
-              + Windows 10 hoặc file RAR5 / có mật khẩu: nên cài thêm 7-Zip
+              + Windows 10 hoặc file có mật khẩu: nên cài thêm 7-Zip
                 (MIỄN PHÍ, mã nguồn mở, dùng hợp pháp cho cơ quan) tại
-                https://www.7-zip.org . Phần mềm tự nhận 7-Zip, không cần
-                mở 7-Zip.
+                https://www.7-zip.org . Phần mềm tự dùng 7-Zip chạy ngầm.
 - File có mật khẩu: phần mềm tự hỏi mật khẩu (cần có 7-Zip).
 
-Lưu ý: định dạng nén .RAR là định dạng có bản quyền của WinRAR nên không
-phần mềm miễn phí nào được tạo file .RAR; dùng .ZIP thay thế (người nhận
-mở được ngay bằng Windows).
+Lưu ý: .RAR là định dạng có bản quyền của WinRAR nên không phần mềm miễn
+phí nào được tạo file .RAR; dùng .ZIP thay thế (người nhận mở được ngay).
 
 
 D. XỬ LÝ SỰ CỐ
 --------------
-- Bấm đúp không thấy gì: kiểm tra phần mềm diệt virus / chính sách máy
-  cơ quan có chặn PowerShell không (không cần quyền Admin).
+- Chuột phải chưa thấy mục mới: chạy lại CaiDat_MenuChuotPhai.bat, hoặc
+  trên Windows 11 chọn "Show more options".
 - Đã chuyển thư mục NenGiaiNen sang chỗ khác: chạy lại CaiDat_MenuChuotPhai.bat.
+- Khi bấm menu có thể chớp nhẹ một cửa sổ đen (PowerShell) rồi tắt: bình thường.
 - File đang mở (Word, Excel...) có thể bị bỏ qua khi nén; đóng file rồi nén lại.
+- Phần mềm diệt virus / chính sách máy cơ quan chặn PowerShell: báo bộ phận IT.
