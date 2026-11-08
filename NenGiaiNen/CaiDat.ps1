@@ -8,13 +8,18 @@ $sendTo  = [Environment]::GetFolderPath('SendTo')
 $desktop = [Environment]::GetFolderPath('Desktop')
 
 function Tao-LoiTat([string]$noiLuu, [string]$ten, [string]$cheDo) {
-    $lnk = $sh.CreateShortcut((Join-Path $noiLuu ($ten + '.lnk')))
+    # WScript.Shell khong ghi duoc ten co dau tieng Viet -> ghi ten tam (khong dau) roi doi ten
+    $tam = Join-Path $noiLuu ('NenGiaiNen_tam_' + [guid]::NewGuid().ToString('N') + '.lnk')
+    $dich = Join-Path $noiLuu ($ten + '.lnk')
+    $lnk = $sh.CreateShortcut($tam)
     $lnk.TargetPath = $psExe
     $lnk.Arguments = ('-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File "{0}" {1}' -f $ps1, $cheDo).Trim()
     $lnk.WorkingDirectory = $PSScriptRoot
     $lnk.IconLocation = $icon
     $lnk.WindowStyle = 7
     $lnk.Save()
+    if (Test-Path -LiteralPath $dich) { Remove-Item -LiteralPath $dich -Force }
+    [IO.File]::Move($tam, $dich)
 }
 
 Tao-LoiTat $sendTo  'Nén thành ZIP'     'Nen'
